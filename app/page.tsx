@@ -10,12 +10,17 @@ import { Header } from "@/src/components/layout/Header";
 import { Skeleton } from "@/src/components/ui/Skeleton";
 import { useAuth } from "@/src/context/AuthContext";
 import { useEvents } from "@/src/hooks/useEvents";
-import type { EventTypeFilter } from "@/src/hooks/useEventFilters";
+import { formatDateRange } from "@/src/lib/formatting";
 import { filterByEventType, filterByPermission, filterBySearch, sortByStartTime } from "@/src/lib/filters";
-import type { TEvent } from "@/src/types/event";
+import type { EventTypeFilter, TEvent } from "@/src/types/event";
 
 type AccessFilter = "all" | "public" | "private";
 type SortMode = "start" | "name" | "speakers";
+const SORT_MODES: readonly SortMode[] = ["start", "name", "speakers"];
+
+function isSortMode(value: string): value is SortMode {
+  return SORT_MODES.includes(value as SortMode);
+}
 
 function sortEvents(events: TEvent[], mode: SortMode): TEvent[] {
   if (mode === "start") {
@@ -200,7 +205,11 @@ function EventsPageContent() {
                   size="3"
                   value={sortMode}
                   disabled={loading}
-                  onValueChange={(value) => setSortMode(value as SortMode)}
+                  onValueChange={(value) => {
+                    if (isSortMode(value)) {
+                      setSortMode(value);
+                    }
+                  }}
                 >
                   <Select.Trigger className="h-11 !w-full justify-between !bg-black/95" style={{ width: "100%" }} />
                   <Select.Content>
@@ -236,7 +245,7 @@ function EventsPageContent() {
                             {event.name}
                           </Text>
                           <Text as="div" size="2" mt="1" style={{ color: "var(--ink-soft)" }}>
-                            {new Date(event.start_time * 1000).toLocaleString()}
+                            {formatDateRange(event.start_time, event.end_time)}
                           </Text>
                         </div>
                       ))

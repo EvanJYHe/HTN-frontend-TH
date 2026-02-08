@@ -1,7 +1,7 @@
 "use client";
 
 import { Badge, Button, Flex, Text } from "@radix-ui/themes";
-import type { EventTypeFilter } from "../../hooks/useEventFilters";
+import type { EventTypeFilter } from "../../types/event";
 
 type FilterChipsProps = {
   selected: EventTypeFilter;

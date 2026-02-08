@@ -2,7 +2,7 @@
 
 import { ArrowRightIcon, Cross2Icon, GlobeIcon, LockClosedIcon, LockOpen1Icon } from "@radix-ui/react-icons";
 import { Avatar, Badge, Flex, Heading, Text } from "@radix-ui/themes";
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useAuth } from "../../context/AuthContext";
 import { formatDateRange } from "../../lib/formatting";
 import type { TEvent } from "../../types/event";
@@ -29,9 +29,13 @@ export function EventCard({ event, allEvents }: EventCardProps) {
       .map((part) => part[0]?.toUpperCase())
       .join("") ?? "?";
 
-  const relatedEvents = event.related_events
-    .map((relatedId) => allEvents.find((candidate) => candidate.id === relatedId))
-    .filter((candidate): candidate is TEvent => Boolean(candidate));
+  const relatedEvents = useMemo(
+    () =>
+      event.related_events
+        .map((relatedId) => allEvents.find((candidate) => candidate.id === relatedId))
+        .filter((candidate): candidate is TEvent => Boolean(candidate)),
+    [allEvents, event.related_events],
+  );
 
   const eventUrl = event.permission === "private" ? event.private_url : event.public_url;
 

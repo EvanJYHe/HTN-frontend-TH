@@ -1,4 +1,5 @@
 export type TEventType = "workshop" | "activity" | "tech_talk";
+export type EventTypeFilter = TEventType | "all";
 
 export type TPermission = "public" | "private";
 

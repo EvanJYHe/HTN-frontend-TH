@@ -12,19 +12,25 @@ import { validateCredentials } from "../lib/auth";
 import type { AuthState } from "../types/auth";
 
 const AuthContext = createContext<AuthState | undefined>(undefined);
+const AUTH_CHANGE_EVENT = "auth-change";
 
 type AuthProviderProps = {
   children: React.ReactNode;
 };
 
 export function AuthProvider({ children }: AuthProviderProps) {
+  const setAuthenticationState = useCallback((authenticated: boolean) => {
+    window.localStorage.setItem(AUTH_STORAGE_KEY, JSON.stringify(authenticated));
+    window.dispatchEvent(new Event(AUTH_CHANGE_EVENT));
+  }, []);
+
   const isAuthenticated = useSyncExternalStore(
     (onStoreChange) => {
       window.addEventListener("storage", onStoreChange);
-      window.addEventListener("auth-change", onStoreChange);
+      window.addEventListener(AUTH_CHANGE_EVENT, onStoreChange);
       return () => {
         window.removeEventListener("storage", onStoreChange);
-        window.removeEventListener("auth-change", onStoreChange);
+        window.removeEventListener(AUTH_CHANGE_EVENT, onStoreChange);
       };
     },
     () => window.localStorage.getItem(AUTH_STORAGE_KEY) === "true",
@@ -34,17 +40,15 @@ export function AuthProvider({ children }: AuthProviderProps) {
   const login = useCallback(
     (username: string, password: string): boolean => {
       const isValid = validateCredentials(username, password);
-      window.localStorage.setItem(AUTH_STORAGE_KEY, JSON.stringify(isValid));
-      window.dispatchEvent(new Event("auth-change"));
+      setAuthenticationState(isValid);
       return isValid;
     },
-    [],
+    [setAuthenticationState],
   );
 
   const logout = useCallback(() => {
-    window.localStorage.setItem(AUTH_STORAGE_KEY, JSON.stringify(false));
-    window.dispatchEvent(new Event("auth-change"));
-  }, []);
+    setAuthenticationState(false);
+  }, [setAuthenticationState]);
 
   const value = useMemo(
     () => ({ isAuthenticated, login, logout }),

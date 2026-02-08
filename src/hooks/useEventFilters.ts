@@ -8,9 +8,7 @@ import {
   filterBySearch,
   sortByStartTime,
 } from "../lib/filters";
-import type { TEvent, TEventType } from "../types/event";
-
-export type EventTypeFilter = TEventType | "all";
+import type { EventTypeFilter, TEvent } from "../types/event";
 
 type UseEventFiltersOptions = {
   searchQuery?: string;
