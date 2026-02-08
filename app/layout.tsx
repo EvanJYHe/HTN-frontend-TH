@@ -7,6 +7,11 @@ import "./globals.css";
 export const metadata: Metadata = {
   title: "HTN Events",
   description: "Discover events, workshops, and talks for Hack the North.",
+  icons: {
+    icon: "/HTN-icon.png",
+    shortcut: "/HTN-icon.png",
+    apple: "/HTN-icon.png",
+  },
 };
 
 export default function RootLayout({
