@@ -7,9 +7,10 @@ import { useEffect, useState } from "react";
 type SearchBarProps = {
   value: string;
   onChange: (value: string) => void;
+  disabled?: boolean;
 };
 
-export function SearchBar({ value, onChange }: SearchBarProps) {
+export function SearchBar({ value, onChange, disabled = false }: SearchBarProps) {
   const [draft, setDraft] = useState(value);
 
   useEffect(() => {
@@ -22,10 +23,11 @@ export function SearchBar({ value, onChange }: SearchBarProps) {
   }, [draft, onChange]);
 
   return (
-    <label htmlFor="event-search">
+    <div className="space-y-2">
       <Flex mb="1" justify="between" align="center" gap="2">
         <Text
-          as="div"
+          as="label"
+          htmlFor="event-search"
           size="2"
           className="text-sm uppercase tracking-[0.08em]"
           style={{ fontFamily: "var(--font-display)" }}
@@ -40,12 +42,13 @@ export function SearchBar({ value, onChange }: SearchBarProps) {
         aria-label="Search events"
         placeholder="Search events, speakers, or topics"
         value={draft}
+        disabled={disabled}
         onChange={(event) => setDraft(event.target.value)}
       >
         <TextField.Slot>
           <MagnifyingGlassIcon height="16" width="16" />
         </TextField.Slot>
       </TextField.Root>
-    </label>
+    </div>
   );
 }

@@ -1,20 +1,20 @@
 "use client";
 
-import { useState } from "react";
-import { Button, Flex, Heading, Separator, Text } from "@radix-ui/themes";
+import Link from "next/link";
+import { Button, Flex, Heading, Text } from "@radix-ui/themes";
 import { useAuth } from "../../context/AuthContext";
-import { LoginForm } from "../auth/LoginForm";
 import { LogoutButton } from "../auth/LogoutButton";
+import { Skeleton } from "../ui/Skeleton";
 
 type HeaderProps = {
   totalEvents: number;
   publicEvents: number;
   speakerCount: number;
+  loading?: boolean;
 };
 
-export function Header({ totalEvents, publicEvents, speakerCount }: HeaderProps) {
+export function Header({ totalEvents, publicEvents, speakerCount, loading = false }: HeaderProps) {
   const { isAuthenticated } = useAuth();
-  const [showLogin, setShowLogin] = useState(false);
 
   return (
     <header className="relative left-1/2 mb-6 w-screen -translate-x-1/2 min-h-[220px] overflow-hidden px-8 py-7 max-md:px-5 max-md:py-6 -mt-16 max-md:-mt-8">
@@ -27,15 +27,25 @@ export function Header({ totalEvents, publicEvents, speakerCount }: HeaderProps)
       <Flex className="relative z-10" justify="between" align={{ initial: "start", sm: "center" }} gap="4" direction={{ initial: "column", sm: "row" }}>
         <div className="relative z-10 pt-5">
           <Flex wrap="wrap" gap="3" align="center" className="leading-none">
-            <Text className="text-sm uppercase tracking-[0.08em] leading-none" style={{ color: "#d4d4d4", fontFamily: "var(--font-display)" }}>
-              {totalEvents} Events
-            </Text>
-            <Text className="text-sm uppercase tracking-[0.08em] leading-none" style={{ color: "#c5c5c5", fontFamily: "var(--font-display)" }}>
-              {publicEvents} Public
-            </Text>
-            <Text className="text-sm uppercase tracking-[0.08em] leading-none" style={{ color: "#b5b5b5", fontFamily: "var(--font-display)" }}>
-              {speakerCount} Speakers
-            </Text>
+            {loading ? (
+              <>
+                <Skeleton className="h-4 w-20 rounded-md" />
+                <Skeleton className="h-4 w-20 rounded-md" />
+                <Skeleton className="h-4 w-24 rounded-md" />
+              </>
+            ) : (
+              <>
+                <Text className="text-sm uppercase tracking-[0.08em] leading-none tabular-nums" style={{ color: "#d4d4d4", fontFamily: "var(--font-display)" }}>
+                  {totalEvents} Events
+                </Text>
+                <Text className="text-sm uppercase tracking-[0.08em] leading-none tabular-nums" style={{ color: "#c5c5c5", fontFamily: "var(--font-display)" }}>
+                  {publicEvents} Public
+                </Text>
+                <Text className="text-sm uppercase tracking-[0.08em] leading-none tabular-nums" style={{ color: "#b5b5b5", fontFamily: "var(--font-display)" }}>
+                  {speakerCount} Speakers
+                </Text>
+              </>
+            )}
           </Flex>
 
           <Heading size="9" className="mt-3" style={{ fontFamily: "var(--font-display)", letterSpacing: "0.03em", lineHeight: 0.95 }}>
@@ -46,21 +56,16 @@ export function Header({ totalEvents, publicEvents, speakerCount }: HeaderProps)
           </Text>
         </div>
 
-        {isAuthenticated ? (
+        {loading ? (
+          <Skeleton className="h-10 w-24 rounded-md" />
+        ) : isAuthenticated ? (
           <LogoutButton />
         ) : (
-          <Button size="3" variant="solid" onClick={() => setShowLogin((value) => !value)}>
-            Login
+          <Button asChild size="3" variant="solid">
+            <Link href="/login">Login</Link>
           </Button>
         )}
       </Flex>
-
-      {!isAuthenticated && showLogin ? (
-        <>
-          <Separator my="4" size="4" />
-          <LoginForm onClose={() => setShowLogin(false)} />
-        </>
-      ) : null}
     </header>
   );
 }

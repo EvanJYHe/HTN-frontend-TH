@@ -5,10 +5,11 @@ import { Button, Flex, Text, TextField } from "@radix-ui/themes";
 import { useAuth } from "../../context/AuthContext";
 
 type LoginFormProps = {
-  onClose: () => void;
+  onSuccess?: () => void;
+  onCancel?: () => void;
 };
 
-export function LoginForm({ onClose }: LoginFormProps) {
+export function LoginForm({ onSuccess, onCancel }: LoginFormProps) {
   const { login } = useAuth();
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
@@ -24,14 +25,14 @@ export function LoginForm({ onClose }: LoginFormProps) {
     }
 
     setError(null);
-    onClose();
+    onSuccess?.();
   };
 
   return (
     <form aria-label="Login form" onSubmit={handleSubmit}>
-      <Flex direction="column" gap="3">
+      <Flex direction="column" gap="5">
         <label htmlFor="username">
-          <Text as="div" size="2" mb="1" style={{ color: "var(--ink-soft)" }}>
+          <Text as="div" size="3" mb="2" style={{ color: "var(--ink-soft)" }}>
             Username
           </Text>
           <TextField.Root
@@ -45,7 +46,7 @@ export function LoginForm({ onClose }: LoginFormProps) {
         </label>
 
         <label htmlFor="password">
-          <Text as="div" size="2" mb="1" style={{ color: "var(--ink-soft)" }}>
+          <Text as="div" size="3" mb="2" style={{ color: "var(--ink-soft)" }}>
             Password
           </Text>
           <TextField.Root
@@ -65,13 +66,15 @@ export function LoginForm({ onClose }: LoginFormProps) {
           </Text>
         ) : null}
 
-        <Flex gap="2">
+        <Flex gap="3" mt="5">
           <Button size="3" type="submit">
             Login
           </Button>
-          <Button size="3" type="button" variant="soft" color="gray" onClick={onClose}>
-            Cancel
-          </Button>
+          {onCancel ? (
+            <Button size="3" type="button" variant="soft" color="gray" onClick={onCancel}>
+              Cancel
+            </Button>
+          ) : null}
         </Flex>
       </Flex>
     </form>

@@ -6,6 +6,7 @@ import type { EventTypeFilter } from "../../hooks/useEventFilters";
 type FilterChipsProps = {
   selected: EventTypeFilter;
   onChange: (type: EventTypeFilter) => void;
+  disabled?: boolean;
   counts: {
     all: number;
     workshop: number;
@@ -21,7 +22,7 @@ const FILTERS: Array<{ label: string; value: EventTypeFilter; key: keyof FilterC
   { label: "Activity", value: "activity", key: "activity" },
 ];
 
-export function FilterChips({ selected, onChange, counts }: FilterChipsProps) {
+export function FilterChips({ selected, onChange, counts, disabled = false }: FilterChipsProps) {
   return (
     <div>
       <Text
@@ -42,6 +43,7 @@ export function FilterChips({ selected, onChange, counts }: FilterChipsProps) {
               key={filter.value}
               color="gray"
               variant={active ? "solid" : "soft"}
+              disabled={disabled}
               onClick={() => onChange(filter.value)}
             >
               {filter.label}

@@ -1,13 +1,13 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { Button, Flex, Select, Text } from "@radix-ui/themes";
+import { Button, Flex, Heading, Select, Text } from "@radix-ui/themes";
 import { EventList } from "@/src/components/events/EventList";
 import { FilterChips } from "@/src/components/filters/FilterChips";
 import { SearchBar } from "@/src/components/filters/SearchBar";
 import { Container } from "@/src/components/layout/Container";
 import { Header } from "@/src/components/layout/Header";
-import { AuthProvider } from "@/src/context/AuthContext";
+import { Skeleton } from "@/src/components/ui/Skeleton";
 import { useAuth } from "@/src/context/AuthContext";
 import { useEvents } from "@/src/hooks/useEvents";
 import type { EventTypeFilter } from "@/src/hooks/useEventFilters";
@@ -27,6 +27,19 @@ function sortEvents(events: TEvent[], mode: SortMode): TEvent[] {
   }
 
   return [...events].sort((a, b) => b.speakers.length - a.speakers.length);
+}
+
+function UpcomingSkeleton() {
+  return (
+    <>
+      {Array.from({ length: 6 }).map((_, index) => (
+        <div key={index} className="rounded-xl bg-[rgba(255,255,255,0.02)] px-3 py-2.5 space-y-2">
+          <Skeleton className="h-4 w-4/5 rounded-md" />
+          <Skeleton className="h-3.5 w-2/3 rounded-md" />
+        </div>
+      ))}
+    </>
+  );
 }
 
 function EventsPageContent() {
@@ -113,15 +126,67 @@ function EventsPageContent() {
           publicEvents={topStats.publicEvents}
           speakerCount={topStats.speakerCount}
           totalEvents={topStats.totalEvents}
+          loading={loading}
         />
 
-        <main className="space-y-4 bg-black">
-          <section className="space-y-3 pb-8 pt-5">
-            <div className="grid grid-cols-1 gap-4 xl:grid-cols-[minmax(0,1fr)_270px]">
-              <div>
-                <SearchBar value={searchQuery} onChange={setSearchQuery} />
+        <main className="bg-black pb-8 pt-5">
+          <div className="grid grid-cols-1 gap-8 lg:grid-cols-[minmax(0,1fr)_clamp(320px,28vw,420px)] lg:items-start">
+            <section className="w-full space-y-8">
+              <div className="space-y-5">
+                <SearchBar value={searchQuery} onChange={setSearchQuery} disabled={loading} />
+
+                <div className="space-y-4">
+                  <FilterChips
+                    counts={eventTypeCounts}
+                    selected={eventTypeFilter}
+                    onChange={setEventTypeFilter}
+                    disabled={loading}
+                  />
+
+                  <Flex wrap="wrap" gap="2" align="center" justify="between">
+                    <Flex wrap="wrap" gap="2">
+                      <Button
+                        color="gray"
+                        variant={accessFilter === "all" ? "solid" : "soft"}
+                        disabled={loading}
+                        onClick={() => setAccessFilter("all")}
+                      >
+                        All Access {accessCounts.all}
+                      </Button>
+                      <Button
+                        color="gray"
+                        variant={accessFilter === "public" ? "solid" : "soft"}
+                        disabled={loading}
+                        onClick={() => setAccessFilter("public")}
+                      >
+                        Public {accessCounts.public}
+                      </Button>
+                      {isAuthenticated ? (
+                        <Button
+                          color="gray"
+                          variant={accessFilter === "private" ? "solid" : "soft"}
+                          disabled={loading}
+                          onClick={() => setAccessFilter("private")}
+                        >
+                          Private {accessCounts.private}
+                        </Button>
+                      ) : null}
+                    </Flex>
+                  </Flex>
+                </div>
               </div>
-              <label className="block w-full xl:w-[270px]">
+
+              <EventList
+                allEvents={permissionScopedEvents}
+                error={error}
+                filteredEvents={filteredEvents}
+                loading={loading}
+                refetch={refetch}
+              />
+            </section>
+
+            <aside className="space-y-5 lg:sticky lg:top-4">
+              <label className="block w-full">
                 <Text
                   as="div"
                   mb="1"
@@ -131,7 +196,12 @@ function EventsPageContent() {
                 >
                   Sort
                 </Text>
-                <Select.Root size="3" value={sortMode} onValueChange={(value) => setSortMode(value as SortMode)}>
+                <Select.Root
+                  size="3"
+                  value={sortMode}
+                  disabled={loading}
+                  onValueChange={(value) => setSortMode(value as SortMode)}
+                >
                   <Select.Trigger className="h-11 !w-full justify-between !bg-black/95" style={{ width: "100%" }} />
                   <Select.Content>
                     <Select.Item value="start">Start Time</Select.Item>
@@ -140,51 +210,41 @@ function EventsPageContent() {
                   </Select.Content>
                 </Select.Root>
               </label>
-            </div>
 
-            <div className="grid grid-cols-1 gap-3 xl:grid-cols-[minmax(0,1fr)_270px]">
-              <div className="space-y-3">
-                <FilterChips counts={eventTypeCounts} selected={eventTypeFilter} onChange={setEventTypeFilter} />
-
-                <Flex wrap="wrap" gap="2" align="center" justify="between">
-                  <Flex wrap="wrap" gap="2">
-                    <Button
-                      color="gray"
-                      variant={accessFilter === "all" ? "solid" : "soft"}
-                      onClick={() => setAccessFilter("all")}
-                    >
-                      All Access {accessCounts.all}
-                    </Button>
-                    <Button
-                      color="gray"
-                      variant={accessFilter === "public" ? "solid" : "soft"}
-                      onClick={() => setAccessFilter("public")}
-                    >
-                      Public {accessCounts.public}
-                    </Button>
-                    {isAuthenticated ? (
-                      <Button
-                        color="gray"
-                        variant={accessFilter === "private" ? "solid" : "soft"}
-                        onClick={() => setAccessFilter("private")}
-                      >
-                        Private {accessCounts.private}
-                      </Button>
-                    ) : null}
-                  </Flex>
+              <section className="self-start rounded-[16px] bg-black/95 p-5 pt-0">
+                <Heading
+                  size="7"
+                  mt="0"
+                  mb="4"
+                  style={{ fontFamily: "var(--font-display)", letterSpacing: "0.02em", lineHeight: 0.95 }}
+                >
+                  Upcoming
+                </Heading>
+                <Flex direction="column" gap="3">
+                  {loading ? (
+                    <UpcomingSkeleton />
+                  ) : null}
+                  {error ? (
+                    <Text size="2" color="red">
+                      Failed to load upcoming events.
+                    </Text>
+                  ) : null}
+                  {!loading && !error
+                    ? filteredEvents.slice(0, 8).map((event) => (
+                        <div key={event.id} className="rounded-xl bg-[rgba(255,255,255,0.02)] px-3 py-2.5">
+                          <Text as="div" size="3" weight="medium" style={{ lineHeight: "1.3" }}>
+                            {event.name}
+                          </Text>
+                          <Text as="div" size="2" mt="1" style={{ color: "var(--ink-soft)" }}>
+                            {new Date(event.start_time * 1000).toLocaleString()}
+                          </Text>
+                        </div>
+                      ))
+                    : null}
                 </Flex>
-              </div>
-              <div />
-            </div>
-          </section>
-
-          <EventList
-            allEvents={permissionScopedEvents}
-            error={error}
-            filteredEvents={filteredEvents}
-            loading={loading}
-            refetch={refetch}
-          />
+              </section>
+            </aside>
+          </div>
         </main>
       </Container>
     </div>
@@ -192,9 +252,5 @@ function EventsPageContent() {
 }
 
 export default function Home() {
-  return (
-    <AuthProvider>
-      <EventsPageContent />
-    </AuthProvider>
-  );
+  return <EventsPageContent />;
 }
