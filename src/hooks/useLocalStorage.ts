@@ -1,0 +1,52 @@
+"use client";
+
+import { useEffect, useState } from "react";
+
+type SetValue<T> = T | ((previousValue: T) => T);
+
+export function useLocalStorage<T>(
+  key: string,
+  initialValue: T,
+): [T, (value: SetValue<T>) => void, () => void] {
+  const [storedValue, setStoredValue] = useState<T>(() => {
+    if (typeof window === "undefined") {
+      return initialValue;
+    }
+
+    const item = window.localStorage.getItem(key);
+
+    if (!item) {
+      return initialValue;
+    }
+
+    try {
+      return JSON.parse(item) as T;
+    } catch {
+      return initialValue;
+    }
+  });
+
+  useEffect(() => {
+    if (typeof window === "undefined") {
+      return;
+    }
+
+    window.localStorage.setItem(key, JSON.stringify(storedValue));
+  }, [key, storedValue]);
+
+  const setValue = (value: SetValue<T>) => {
+    setStoredValue((previousValue) =>
+      value instanceof Function ? value(previousValue) : value,
+    );
+  };
+
+  const remove = () => {
+    if (typeof window !== "undefined") {
+      window.localStorage.removeItem(key);
+    }
+
+    setStoredValue(initialValue);
+  };
+
+  return [storedValue, setValue, remove];
+}
