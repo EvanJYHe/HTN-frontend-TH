@@ -1,65 +1,200 @@
-import Image from "next/image";
+"use client";
+
+import { useMemo, useState } from "react";
+import { Button, Flex, Select, Text } from "@radix-ui/themes";
+import { EventList } from "@/src/components/events/EventList";
+import { FilterChips } from "@/src/components/filters/FilterChips";
+import { SearchBar } from "@/src/components/filters/SearchBar";
+import { Container } from "@/src/components/layout/Container";
+import { Header } from "@/src/components/layout/Header";
+import { AuthProvider } from "@/src/context/AuthContext";
+import { useAuth } from "@/src/context/AuthContext";
+import { useEvents } from "@/src/hooks/useEvents";
+import type { EventTypeFilter } from "@/src/hooks/useEventFilters";
+import { filterByEventType, filterByPermission, filterBySearch, sortByStartTime } from "@/src/lib/filters";
+import type { TEvent } from "@/src/types/event";
+
+type AccessFilter = "all" | "public" | "private";
+type SortMode = "start" | "name" | "speakers";
+
+function sortEvents(events: TEvent[], mode: SortMode): TEvent[] {
+  if (mode === "start") {
+    return sortByStartTime(events);
+  }
+
+  if (mode === "name") {
+    return [...events].sort((a, b) => a.name.localeCompare(b.name));
+  }
+
+  return [...events].sort((a, b) => b.speakers.length - a.speakers.length);
+}
+
+function EventsPageContent() {
+  const { isAuthenticated } = useAuth();
+  const { events, loading, error, refetch } = useEvents();
+  const [searchQuery, setSearchQuery] = useState("");
+  const [eventTypeFilter, setEventTypeFilter] = useState<EventTypeFilter>("all");
+  const [accessFilter, setAccessFilter] = useState<AccessFilter>("all");
+  const [sortMode, setSortMode] = useState<SortMode>("start");
+
+  const permissionScopedEvents = useMemo(
+    () => filterByPermission(events, isAuthenticated),
+    [events, isAuthenticated],
+  );
+
+  const searchScopedEvents = useMemo(
+    () => filterBySearch(permissionScopedEvents, searchQuery),
+    [permissionScopedEvents, searchQuery],
+  );
+
+  const typeScopedEvents = useMemo(
+    () => filterByEventType(searchScopedEvents, eventTypeFilter),
+    [searchScopedEvents, eventTypeFilter],
+  );
+
+  const accessScopedForCategories = useMemo(() => {
+    if (accessFilter === "public") {
+      return searchScopedEvents.filter((event) => event.permission === "public");
+    }
+
+    if (accessFilter === "private" && isAuthenticated) {
+      return searchScopedEvents.filter((event) => event.permission === "private");
+    }
+
+    return searchScopedEvents;
+  }, [searchScopedEvents, accessFilter, isAuthenticated]);
+
+  const eventTypeCounts = useMemo(
+    () => ({
+      all: accessScopedForCategories.length,
+      workshop: accessScopedForCategories.filter((event) => event.event_type === "workshop").length,
+      tech_talk: accessScopedForCategories.filter((event) => event.event_type === "tech_talk").length,
+      activity: accessScopedForCategories.filter((event) => event.event_type === "activity").length,
+    }),
+    [accessScopedForCategories],
+  );
+
+  const topStats = useMemo(
+    () => ({
+      totalEvents: permissionScopedEvents.length,
+      publicEvents: permissionScopedEvents.filter((event) => event.permission === "public").length,
+      speakerCount: permissionScopedEvents.reduce((sum, event) => sum + event.speakers.length, 0),
+    }),
+    [permissionScopedEvents],
+  );
+
+  const accessCounts = useMemo(() => {
+    const publicEvents = typeScopedEvents.filter((event) => event.permission === "public").length;
+    const privateEvents = typeScopedEvents.filter((event) => event.permission === "private").length;
+    return {
+      all: typeScopedEvents.length,
+      public: publicEvents,
+      private: privateEvents,
+    };
+  }, [typeScopedEvents]);
+
+  const filteredEvents = useMemo(() => {
+    let scoped = typeScopedEvents;
+    if (accessFilter === "public") {
+      scoped = scoped.filter((event) => event.permission === "public");
+    }
+
+    if (accessFilter === "private" && isAuthenticated) {
+      scoped = scoped.filter((event) => event.permission === "private");
+    }
+
+    return sortEvents(scoped, sortMode);
+  }, [typeScopedEvents, accessFilter, isAuthenticated, sortMode]);
+
+  return (
+    <div className="min-h-screen bg-black">
+      <Container>
+        <Header
+          publicEvents={topStats.publicEvents}
+          speakerCount={topStats.speakerCount}
+          totalEvents={topStats.totalEvents}
+        />
+
+        <main className="space-y-4 bg-black">
+          <section className="space-y-3 pb-8 pt-5">
+            <div className="grid grid-cols-1 gap-4 xl:grid-cols-[minmax(0,1fr)_270px]">
+              <div>
+                <SearchBar value={searchQuery} onChange={setSearchQuery} />
+              </div>
+              <label className="block w-full xl:w-[270px]">
+                <Text
+                  as="div"
+                  mb="1"
+                  size="2"
+                  className="text-sm uppercase tracking-[0.08em]"
+                  style={{ fontFamily: "var(--font-display)" }}
+                >
+                  Sort
+                </Text>
+                <Select.Root size="3" value={sortMode} onValueChange={(value) => setSortMode(value as SortMode)}>
+                  <Select.Trigger className="h-11 !w-full justify-between !bg-black/95" style={{ width: "100%" }} />
+                  <Select.Content>
+                    <Select.Item value="start">Start Time</Select.Item>
+                    <Select.Item value="name">Name</Select.Item>
+                    <Select.Item value="speakers">Speaker Count</Select.Item>
+                  </Select.Content>
+                </Select.Root>
+              </label>
+            </div>
+
+            <div className="grid grid-cols-1 gap-3 xl:grid-cols-[minmax(0,1fr)_270px]">
+              <div className="space-y-3">
+                <FilterChips counts={eventTypeCounts} selected={eventTypeFilter} onChange={setEventTypeFilter} />
+
+                <Flex wrap="wrap" gap="2" align="center" justify="between">
+                  <Flex wrap="wrap" gap="2">
+                    <Button
+                      color="gray"
+                      variant={accessFilter === "all" ? "solid" : "soft"}
+                      onClick={() => setAccessFilter("all")}
+                    >
+                      All Access {accessCounts.all}
+                    </Button>
+                    <Button
+                      color="gray"
+                      variant={accessFilter === "public" ? "solid" : "soft"}
+                      onClick={() => setAccessFilter("public")}
+                    >
+                      Public {accessCounts.public}
+                    </Button>
+                    {isAuthenticated ? (
+                      <Button
+                        color="gray"
+                        variant={accessFilter === "private" ? "solid" : "soft"}
+                        onClick={() => setAccessFilter("private")}
+                      >
+                        Private {accessCounts.private}
+                      </Button>
+                    ) : null}
+                  </Flex>
+                </Flex>
+              </div>
+              <div />
+            </div>
+          </section>
+
+          <EventList
+            allEvents={permissionScopedEvents}
+            error={error}
+            filteredEvents={filteredEvents}
+            loading={loading}
+            refetch={refetch}
+          />
+        </main>
+      </Container>
+    </div>
+  );
+}
 
 export default function Home() {
   return (
-    <div className="flex min-h-screen items-center justify-center bg-zinc-50 font-sans dark:bg-black">
-      <main className="flex min-h-screen w-full max-w-3xl flex-col items-center justify-between py-32 px-16 bg-white dark:bg-black sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={100}
-          height={20}
-          priority
-        />
-        <div className="flex flex-col items-center gap-6 text-center sm:items-start sm:text-left">
-          <h1 className="max-w-xs text-3xl font-semibold leading-10 tracking-tight text-black dark:text-zinc-50">
-            To get started, edit the page.tsx file.
-          </h1>
-          <p className="max-w-md text-lg leading-8 text-zinc-600 dark:text-zinc-400">
-            Looking for a starting point or more instructions? Head over to{" "}
-            <a
-              href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Templates
-            </a>{" "}
-            or the{" "}
-            <a
-              href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Learning
-            </a>{" "}
-            center.
-          </p>
-        </div>
-        <div className="flex flex-col gap-4 text-base font-medium sm:flex-row">
-          <a
-            className="flex h-12 w-full items-center justify-center gap-2 rounded-full bg-foreground px-5 text-background transition-colors hover:bg-[#383838] dark:hover:bg-[#ccc] md:w-[158px]"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={16}
-              height={16}
-            />
-            Deploy Now
-          </a>
-          <a
-            className="flex h-12 w-full items-center justify-center rounded-full border border-solid border-black/[.08] px-5 transition-colors hover:border-transparent hover:bg-black/[.04] dark:border-white/[.145] dark:hover:bg-[#1a1a1a] md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Documentation
-          </a>
-        </div>
-      </main>
-    </div>
+    <AuthProvider>
+      <EventsPageContent />
+    </AuthProvider>
   );
 }

@@ -4,13 +4,12 @@ import {
   createContext,
   useCallback,
   useContext,
-  useEffect,
   useMemo,
+  useSyncExternalStore,
 } from "react";
 import { AUTH_STORAGE_KEY } from "../constants/auth";
 import { validateCredentials } from "../lib/auth";
 import type { AuthState } from "../types/auth";
-import { useLocalStorage } from "../hooks/useLocalStorage";
 
 const AuthContext = createContext<AuthState | undefined>(undefined);
 
@@ -19,32 +18,33 @@ type AuthProviderProps = {
 };
 
 export function AuthProvider({ children }: AuthProviderProps) {
-  const [isAuthenticated, setIsAuthenticated] = useLocalStorage<boolean>(
-    AUTH_STORAGE_KEY,
-    false,
+  const isAuthenticated = useSyncExternalStore(
+    (onStoreChange) => {
+      window.addEventListener("storage", onStoreChange);
+      window.addEventListener("auth-change", onStoreChange);
+      return () => {
+        window.removeEventListener("storage", onStoreChange);
+        window.removeEventListener("auth-change", onStoreChange);
+      };
+    },
+    () => window.localStorage.getItem(AUTH_STORAGE_KEY) === "true",
+    () => false,
   );
-
-  useEffect(() => {
-    if (typeof window === "undefined") {
-      return;
-    }
-
-    const storedValue = window.localStorage.getItem(AUTH_STORAGE_KEY);
-    setIsAuthenticated(storedValue === "true");
-  }, [setIsAuthenticated]);
 
   const login = useCallback(
     (username: string, password: string): boolean => {
       const isValid = validateCredentials(username, password);
-      setIsAuthenticated(isValid);
+      window.localStorage.setItem(AUTH_STORAGE_KEY, JSON.stringify(isValid));
+      window.dispatchEvent(new Event("auth-change"));
       return isValid;
     },
-    [setIsAuthenticated],
+    [],
   );
 
   const logout = useCallback(() => {
-    setIsAuthenticated(false);
-  }, [setIsAuthenticated]);
+    window.localStorage.setItem(AUTH_STORAGE_KEY, JSON.stringify(false));
+    window.dispatchEvent(new Event("auth-change"));
+  }, []);
 
   const value = useMemo(
     () => ({ isAuthenticated, login, logout }),
