@@ -56,7 +56,16 @@ export function EventCard({ event, allEvents }: EventCardProps) {
     <>
       <article
         id={`event-${event.id}`}
-        className="group relative isolate flex h-full min-h-[31rem] w-full flex-col overflow-hidden rounded-[16px] border border-[rgba(255,255,255,0.15)] bg-[linear-gradient(180deg,rgba(0,0,0,0.97),rgba(7,11,19,0.98))] p-3.5 shadow-[0_10px_24px_rgba(0,0,0,0.38)]"
+        className="group relative isolate flex h-full min-h-[31rem] w-full cursor-pointer flex-col overflow-hidden rounded-[16px] border border-[rgba(255,255,255,0.15)] bg-[linear-gradient(180deg,rgba(0,0,0,0.97),rgba(7,11,19,0.98))] p-3.5 shadow-[0_10px_24px_rgba(0,0,0,0.38)]"
+        role="button"
+        tabIndex={0}
+        onClick={() => setIsModalOpen(true)}
+        onKeyDown={(keyEvent) => {
+          if (keyEvent.key === "Enter" || keyEvent.key === " ") {
+            keyEvent.preventDefault();
+            setIsModalOpen(true);
+          }
+        }}
       >
         <div className="pointer-events-none absolute inset-0 rounded-[16px] border border-[rgba(248,230,178,0.1)] [mask-image:linear-gradient(to_bottom,black_0%,black_72%,transparent_100%)]" />
 
@@ -229,7 +238,7 @@ export function EventCard({ event, allEvents }: EventCardProps) {
                   ) : null}
 
                   {relatedEvents.length > 0 ? (
-                    <div className="space-y-2 pt-2">
+                    <div className="pt-4">
                       <Text
                         as="div"
                         size="1"
@@ -238,7 +247,7 @@ export function EventCard({ event, allEvents }: EventCardProps) {
                       >
                         Related events
                       </Text>
-                      <Flex gap="2" wrap="wrap">
+                      <Flex gap="2" wrap="wrap" className="pt-2">
                         {relatedEvents.slice(0, 6).map((related) => (
                           <button
                             key={related.id}
