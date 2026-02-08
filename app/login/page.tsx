@@ -45,7 +45,7 @@ export default function LoginPage() {
               >
                 Login
               </Heading>
-              <div className="mt-8 md:mt-10">
+              <div className="mt-6 md:mt-7">
                 <LoginForm onSuccess={handleSuccess} />
               </div>
             </div>

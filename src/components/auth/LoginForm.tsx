@@ -30,9 +30,9 @@ export function LoginForm({ onSuccess, onCancel }: LoginFormProps) {
 
   return (
     <form aria-label="Login form" onSubmit={handleSubmit}>
-      <Flex direction="column" gap="5">
+      <Flex direction="column" gap="4">
         <label htmlFor="username">
-          <Text as="div" size="3" mb="2" style={{ color: "var(--ink-soft)" }}>
+          <Text as="div" size="3" mb="1" style={{ color: "var(--ink-soft)" }}>
             Username
           </Text>
           <TextField.Root
@@ -46,7 +46,7 @@ export function LoginForm({ onSuccess, onCancel }: LoginFormProps) {
         </label>
 
         <label htmlFor="password">
-          <Text as="div" size="3" mb="2" style={{ color: "var(--ink-soft)" }}>
+          <Text as="div" size="3" mb="1" style={{ color: "var(--ink-soft)" }}>
             Password
           </Text>
           <TextField.Root
@@ -58,6 +58,10 @@ export function LoginForm({ onSuccess, onCancel }: LoginFormProps) {
             value={password}
             onChange={(event) => setPassword(event.target.value)}
           />
+          <Text as="p" size="1" mt="2" style={{ color: "#737373" }}>
+            Hint: username = <span className="text-neutral-300">hacker</span>, password ={" "}
+            <span className="text-neutral-300">htn2026</span>
+          </Text>
         </label>
 
         {error ? (
@@ -66,7 +70,7 @@ export function LoginForm({ onSuccess, onCancel }: LoginFormProps) {
           </Text>
         ) : null}
 
-        <Flex gap="3" mt="5">
+        <Flex gap="3" mt="3">
           <Button size="3" type="submit">
             Login
           </Button>
