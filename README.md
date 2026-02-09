@@ -1,36 +1,91 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# HTN Events Platform
 
-## Getting Started
+A frontend submission for the Hack the North challenge.
 
-First, run the development server:
+This project is a responsive events dashboard built with Next.js, TypeScript, and React. It fetches live event data from the HTN API, supports auth-gated private events, and focuses on a strong visual identity inspired by Hack the North branding.
+
+## Why this project exists
+
+I treated this as both a challenge submission and a learning sprint:
+- Build a clean typed foundation first
+- Ship a complete, usable product in limited time
+- Push design quality beyond generic component-library output
+
+## What’s implemented
+
+- Event feed from `https://api.hackthenorth.com/v3/events`
+- Search (debounced)
+- Event type filters (`workshop`, `tech_talk`, `activity`)
+- Access filters (all/public/private, private visible only when authenticated)
+- Sorting (`start`, `name`, `speaker count`)
+- Private/public permission handling
+- Event detail modal with related-event navigation
+- Skeleton loading states and retry on API failure
+- Dedicated login route with persisted auth state
+- Responsive layout (adaptive grid + desktop side rail)
+
+## Tech stack
+
+- Next.js (App Router)
+- React
+- TypeScript
+- Tailwind CSS v4
+- Radix UI Themes + Icons
+
+## Design direction
+
+The visual direction is intentionally HTN-inspired:
+- HTN fonts (`Satoshi`, `Castledown`) via `@font-face`
+- Dark cosmic palette and layered hero banner treatment
+- Vertical, media-forward event cards with modal expansion
+
+I initially started with denser text-first cards and then refactored into vertical cards for better scanability and stronger visual hierarchy.
+
+## Architecture notes
+
+- `src/lib/api.ts`: typed API access + centralized error handling
+- `src/context/AuthContext.tsx`: auth via Context + `localStorage` + `useSyncExternalStore`
+- `src/lib/filters.ts`: pure filter/sort functions
+- `src/components/*`: separated by domain (`events`, `filters`, `layout`, `auth`, `ui`)
+
+## Run locally
 
 ```bash
+npm install
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Then open `http://localhost:3000`.
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## Test credentials
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+- Username: `hacker`
+- Password: `htn2026`
 
-## Learn More
+## Project structure
 
-To learn more about Next.js, take a look at the following resources:
+```txt
+app/
+  layout.tsx
+  page.tsx
+  login/page.tsx
+  loading.tsx
+src/
+  components/
+  constants/
+  context/
+  hooks/
+  lib/
+  types/
+```
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+## Trade-offs and next steps
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+Given the timebox, I prioritized a cohesive end-to-end experience over shipping every optional feature.
 
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+Planned improvements:
+- Event bookmarking/ranking
+- More advanced filters (date/speaker facets)
+- Additional views (table/list/board)
+- Stronger modal focus management and reduced-motion support
+- Automated tests (unit + e2e)
